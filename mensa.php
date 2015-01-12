@@ -23,13 +23,18 @@ Credits: Oliver Bühler
     $form .= '<fieldset class="mensa-location">';
     $form .= '<div class="form-item">';
     $form .= '<select name="mensa_date" class="mensa-form-select">';
-        $tage = array("Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag");  			//Deutsche Datumsausgabe
+        $tage = array("Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag");				//Deutsche Datumsausgabe
         for ($z=0;$z<=14;$z++)																					//Schleife für 14 Wochentage
         {
             $nextday        = mktime(0, 0, 0, date("m")  , date("d")+$z, date("Y"));							//Definition nächster Tag
             if (!(date(N,$nextday) == '6' OR date(N,$nextday) == '7'))											//Check Wochenende
-            {  
-                $form .= '<option value="'.date("Ymd",$nextday).'">'.$tage[date("w",$nextday)].date(" - d.m.Y",$nextday).'</option>';
+            {
+		if (isset($_POST['mensa_date']) && ($_POST['mensa_date'] == date("Ymd",$nextday)))
+		{
+			$form .= '<option value="'.date("Ymd",$nextday).'" selected>'.$tage[date("w",$nextday)].date(" - d.m.Y",$nextday).'</option>';
+		} else {
+          		$form .= '<option value="'.date("Ymd",$nextday).'">'.$tage[date("w",$nextday)].date(" - d.m.Y",$nextday).'</option>';
+		}
             }
         }
      $form .= '</select>';
@@ -79,13 +84,34 @@ function get_mensaplan()
 $mensaplan .= '<div class="mensa-item">';
 $mensaplan .= '	<h1>'.$xml->group[$i]->name.'</h1>';
 setlocale (LC_MONETARY, 'de_DE.UTF-8', 'de_DE@euro', 'de_DE', 'de', 'ge');
-$mensaplan .= '	<p class="mensa-price">'.money_format('%^-14#4.2n', floatval($xml->group[$i]->prices->price[0])).'</p>';
+
+$price = 0;
+
+
+//$mensaplan .= '	<p class="mensa-price">'.money_format('%^-14#4.2n', floatval($xml->group[$i]->prices->price[0])).'</p>';
 $mensaplan .= '	<ul>';
 
                     $component_max = count($xml->group[$i]->components->component);
                     for($n=0;$n<$component_max;$n++)
                     {
-                        $mensaplan .= '		<li>'.$xml->group[$i]->components->component[$n]->name1.'</li>'; 
+			if($xml->group[$i]->prices){
+    				$price = $xml->group[$i]->prices->price[0] ;
+				$mensaplan .= '	<li style="padding-bottom:30px; margin-top: 10px;">'.$xml->group[$i]->components->component[$n]->name1;
+				if ($n == 0){
+                        		$mensaplan .= '	<span class="mensa-price">'.money_format('%^-14#4.2n', floatval($price)).'</span></li>';
+				}
+			}else{
+    				$price = $xml->group[$i]->components->component[0]->prices->price[0] ;
+				$mensaplan .= '	<li style="padding-bottom:30px; margin-top: 10px;">'.$xml->group[$i]->components->component[$n]->name1;
+                        	if ( ($xml->group[$i]->internalname == "Pastateller") and ( $n > 0 ) ) {
+					$mensaplan .= '';
+				}
+				else {
+					$mensaplan .= '	<span class="mensa-price">'.money_format('%^-14#4.2n', floatval($price)).'</span></li>';
+				}
+			}
+
+
                     }
 $mensaplan .= '			</ul>';
 $mensaplan .= '</div>';
